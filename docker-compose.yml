@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Backend API Service
+  backend:
+    build: ./backend
+    container_name: fulfillmentea-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./backend/db.sqlite3
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-in-production}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - MEDIA_DIR=backend/media
+      - DEFAULT_LOCATION=Main Office
+      - OTP_EXPIRY_MINUTES=30
+      - CORS_ORIGINS=["*"]
+      - BLKSMS_BASE_URL=${BLKSMS_BASE_URL:-http://bulksms.fasthub.co.tz}
+      - BLKSMS_CLIENT_ID=${BLKSMS_CLIENT_ID}
+      - BLKSMS_CLIENT_SECRET=${BLKSMS_CLIENT_SECRET}
+      - BLKSMS_SENDER_ID=${BLKSMS_SENDER_ID:-FULFILLMENTEA}
+      - BLKSMS_ENABLED=${BLKSMS_ENABLED:-false}
+    volumes:
+      - backend_data:/app/backend
+      - ./backend/media:/app/backend/media
+    networks:
+      - fulfillmentea-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Dashboard Service
+  dashboard:
+    build: ./dashboard
+    container_name: fulfillmentea-dashboard
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://backend:8000}
+    depends_on:
+      - backend
+    networks:
+      - fulfillmentea-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: fulfillmentea-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - backend
+      - dashboard
+    networks:
+      - fulfillmentea-network
+    profiles:
+      - production
+
+volumes:
+  backend_data:
+    driver: local
+
+networks:
+  fulfillmentea-network:
+    driver: bridge
