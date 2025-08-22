@@ -9,6 +9,7 @@ router = APIRouter()
 
 
 @router.post("/", response_model=RiderOut)
+@router.post("", response_model=RiderOut, include_in_schema=False)
 def create_rider(payload: RiderCreate, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
     if db.query(Rider).filter(Rider.phone == payload.phone).first():
         raise HTTPException(status_code=400, detail="Phone already exists")
@@ -20,6 +21,7 @@ def create_rider(payload: RiderCreate, db: Session = Depends(get_db), _=Depends(
 
 
 @router.get("/", response_model=list[RiderOut])
+@router.get("", response_model=list[RiderOut], include_in_schema=False)
 def list_riders(db: Session = Depends(get_db)):
     return db.query(Rider).all()
 

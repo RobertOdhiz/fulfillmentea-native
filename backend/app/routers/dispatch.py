@@ -1,4 +1,5 @@
 from datetime import datetime
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -10,6 +11,26 @@ from ..utils.otp import generate_otp_code, hash_otp, expiry_time
 from ..services.notifications import send_sms
 
 router = APIRouter()
+
+def _to_e164(phone: str) -> str:
+    p = str(phone or "").strip().replace(" ", "").replace("-", "")
+    if not p:
+        return ""
+    if not p.startswith("+") and p[0].isdigit():
+        p = f"+{p}"
+    return p
+
+def _ensure_reference(reference: str = None) -> str:
+    if not reference:
+        return uuid.uuid4().hex  # 32 chars
+    reference = str(reference)
+    if len(reference) >= 20:
+        return reference
+    pad = uuid.uuid4().hex
+    new_ref = (reference + pad)[:max(20, len(reference))]
+    if len(new_ref) < 20:
+        new_ref = new_ref + pad[: (20 - len(new_ref))]
+    return new_ref
 
 
 @router.post("/{parcel_id}/assign", response_model=AssignmentOut)
@@ -47,15 +68,15 @@ def assign_rider(parcel_id: str, payload: AssignmentCreate, db: Session = Depend
     try:
         # Notify sender about rider assignment
         sender_message = f"Parcel {parcel_id} has been assigned to rider {rider.full_name} ({rider.phone}). Your parcel is now out for delivery!"
-        send_sms(parcel.sender_phone, sender_message)
+        send_sms(_to_e164(parcel.sender_phone), sender_message)
         
         # Notify receiver with OTP and rider details
         receiver_message = f"Your parcel {parcel_id} is out for delivery! Rider: {rider.full_name} ({rider.phone}). Delivery OTP: {code}. Please have this code ready when the rider arrives."
-        send_sms(parcel.receiver_phone, receiver_message)
+        send_sms(_to_e164(parcel.receiver_phone), receiver_message)
         
         # Notify rider about new assignment
         rider_message = f"You have been assigned parcel {parcel_id}. Pickup from: {parcel.sender_name} ({parcel.sender_phone}) at {parcel.sender_location}. Deliver to: {parcel.receiver_name} ({parcel.receiver_phone}) at {parcel.receiver_location}."
-        send_sms(rider.phone, rider_message)
+        send_sms(_to_e164(rider.phone), rider_message)
         
     except Exception as e:
         print(f"Failed to send SMS notifications: {e}")
@@ -65,6 +86,7 @@ def assign_rider(parcel_id: str, payload: AssignmentCreate, db: Session = Depend
 
 
 @router.get("/", response_model=list[AssignmentOut])
+@router.get("", response_model=list[AssignmentOut], include_in_schema=False)
 def list_assignments(db: Session = Depends(get_db)):
     """List all parcel assignments"""
     assignments = db.query(Assignment).all()
@@ -117,6 +139,6 @@ def dispatch_parcel(parcel_id: str, db: Session = Depends(get_db), staff=Depends
     db.commit()
 
     # Notify both sender and receiver on dispatch and send OTP to receiver
-    send_sms(parcel.sender_phone, f"Parcel {parcel.id} dispatched.")
-    send_sms(parcel.receiver_phone, f"Your delivery OTP is {code}")
+    send_sms(_to_e164(parcel.sender_phone), f"Parcel {parcel.id} dispatched.")
+    send_sms(_to_e164(parcel.receiver_phone), f"Your delivery OTP is {code}")
     return {"status": "ok"}

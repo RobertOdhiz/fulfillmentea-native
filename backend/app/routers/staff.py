@@ -15,6 +15,7 @@ def me(current: Staff = Depends(get_current_staff)):
 
 
 @router.get("/", response_model=list[StaffOut])
+@router.get("", response_model=list[StaffOut], include_in_schema=False)
 def list_staff(db: Session = Depends(get_db), _: Staff = Depends(require_roles(StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
     return db.query(Staff).all()
 

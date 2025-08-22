@@ -9,11 +9,13 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[InventoryItemOut])
+@router.get("", response_model=list[InventoryItemOut], include_in_schema=False)
 def list_items(db: Session = Depends(get_db)):
     return db.query(InventoryItem).filter(InventoryItem.is_active == True).all()
 
 
 @router.post("/", response_model=InventoryItemOut)
+@router.post("", response_model=InventoryItemOut, include_in_schema=False)
 def create_item(payload: InventoryItemCreate, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
     if payload.sku and db.query(InventoryItem).filter(InventoryItem.sku == payload.sku).first():
         raise HTTPException(status_code=400, detail="SKU already exists")

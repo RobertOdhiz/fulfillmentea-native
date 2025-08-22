@@ -31,6 +31,7 @@ def validate_status_transition(current_status: ParcelStatus, new_status: ParcelS
 
 
 @router.post("/", response_model=ParcelOut)
+@router.post("", response_model=ParcelOut, include_in_schema=False)
 def create_parcel(
     payload: ParcelCreate, 
     db: Session = Depends(get_db), 
@@ -80,6 +81,7 @@ def create_parcel(
 
 
 @router.get("/", response_model=List[ParcelOut])
+@router.get("", response_model=List[ParcelOut], include_in_schema=False)
 def list_parcels(
     db: Session = Depends(get_db),
 ):
