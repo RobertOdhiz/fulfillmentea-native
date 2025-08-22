@@ -65,7 +65,7 @@ def assign_rider(parcel_id: str, payload: AssignmentCreate, db: Session = Depend
 
 
 @router.get("/", response_model=list[AssignmentOut])
-def list_assignments(db: Session = Depends(get_db), staff=Depends(get_current_staff)):
+def list_assignments(db: Session = Depends(get_db)):
     """List all parcel assignments"""
     assignments = db.query(Assignment).all()
     
