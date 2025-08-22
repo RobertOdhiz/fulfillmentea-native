@@ -16,56 +16,8 @@ RUN apt-get update \
         g++ \
         libffi-dev \
         libssl-dev \
-        libjpeg-dev \
-        libpng-dev \
-        libgif-dev \
-        libwebp-dev \
-        libopenjp2-7-dev \
-        libtiff5-dev \
-        libfreetype6-dev \
-        liblcms2-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        libxcb1-dev \
-        libxrandr-dev \
-        libxss-dev \
-        libasound2-dev \
-        libpango1.0-dev \
-        libcairo2-dev \
-        libgdk-pixbuf2.0-dev \
-        libgtk-3-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libswscale-dev \
-        libv4l-dev \
-        libxvidcore-dev \
-        libx264-dev \
-        libjpeg-dev \
-        libpng-dev \
-        libtiff-dev \
-        libjasper-dev \
-        libwebp-dev \
-        libgif-dev \
-        libopenjp2-7-dev \
-        libtiff5-dev \
-        libfreetype6-dev \
-        liblcms2-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        libxcb1-dev \
-        libxrandr-dev \
-        libxss-dev \
-        libasound2-dev \
-        libpango1.0-dev \
-        libcairo2-dev \
-        libgdk-pixbuf2.0-dev \
-        libgtk-3-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libswscale-dev \
-        libv4l-dev \
-        libxvidcore-dev \
-        libx264-dev \
+        curl \
+        sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching

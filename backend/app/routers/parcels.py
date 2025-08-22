@@ -126,7 +126,6 @@ def upload_photo(
         parcel_id=parcel_id, 
         type=type, 
         file_path=dest,
-        created_by=staff.id  # Track who uploaded the photo
     )
     db.add(photo)
     db.commit()
@@ -151,7 +150,6 @@ def add_payment(
         currency=payload.currency,
         method=payload.method,
         reference=payload.reference,
-        received_by_id=staff.id  # Track who processed the payment
     )
     db.add(payment)
     db.commit()

@@ -8,7 +8,7 @@ from .core.config import settings
 from .db import Base, engine
 from .models import *  # noqa
 
-from .routers import auth, staff, riders, parcels, dispatch, delivery, payments, finance, inventory
+from .routers import auth, staff, riders, parcels, dispatch, delivery, payments, finance, inventory, sms
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2):
@@ -50,6 +50,7 @@ app.include_router(delivery.router, prefix="/delivery", tags=["delivery"])
 app.include_router(payments.router, prefix="/payments", tags=["payments"])
 app.include_router(finance.router, prefix="/finance", tags=["finance"])
 app.include_router(inventory.router, prefix="/inventory", tags=["inventory"])
+app.include_router(sms.router, prefix="/sms", tags=["sms"])
 
 
 # Add global security scheme for Bearer token in Swagger UI

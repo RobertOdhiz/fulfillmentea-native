@@ -11,10 +11,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
     
     # FastHub TZ BlkSMS Configuration
-    blksms_base_url: str = "http://bulksms.fasthub.co.tz"
+    blksms_base_url: str = "https://bulksms.fasthub.co.tz"
     blksms_client_id: str = ""
     blksms_client_secret: str = ""
-    blksms_sender_id: str = "FULFILLMENTEA"
+    blksms_sender_id: str = "REAL DEAL"
     blksms_enabled: bool = False
 
     class Config:
