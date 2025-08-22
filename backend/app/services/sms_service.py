@@ -80,11 +80,12 @@ class BlkSMSService:
             "clientSecret": self.client_secret,
         }
 
+    
+
     def _make_request(self, endpoint: str, payload: Dict, method: str = "POST") -> Optional[Dict]:
         """
         Make HTTP request with error handling.
-        - POST sends JSON body.
-        - GET sends query params.
+        Logs request + response in full detail.
         """
         if not self.enabled:
             logger.warning("SMS service disabled; skipping request to %s", endpoint)
@@ -96,30 +97,34 @@ class BlkSMSService:
 
         url = f"{self.base_url}{endpoint}"
         try:
-            logger.info("HTTP %s -> %s", method.upper(), url)
-            logger.debug("Request payload:\n%s", json.dumps(payload, indent=2))
+            logger.info("➡️ HTTP %s -> %s", method.upper(), url)
+            logger.debug("Request headers:\n%s", json.dumps(self._headers(), indent=2))
+            logger.debug("Request payload:\n%s", json.dumps(payload, indent=2, ensure_ascii=False))
 
             if method.upper() == "POST":
                 resp = requests.post(url, json=payload, headers=self._headers(), timeout=30)
             else:
                 resp = requests.get(url, params=payload, headers=self._headers(), timeout=30)
 
-            logger.info("API Response Status: %s", resp.status_code)
-            logger.debug("API Response Headers: %s", dict(resp.headers))
-            logger.debug("API Response Text: %s", resp.text)
+            logger.info("⬅️ API Response Status: %s", resp.status_code)
+            try:
+                logger.debug("Response Headers:\n%s", json.dumps(dict(resp.headers), indent=2))
+            except Exception:
+                logger.debug("Response Headers (raw): %s", resp.headers)
 
-            # Raise for 400/500 etc so we can capture response in exception handler
+            logger.debug("Response Body:\n%s", resp.text)
+
             resp.raise_for_status()
 
-            # parse json
             try:
-                return resp.json()
+                parsed = resp.json()
+                logger.debug("Parsed JSON:\n%s", json.dumps(parsed, indent=2, ensure_ascii=False))
+                return parsed
             except json.JSONDecodeError:
                 logger.error("Failed to parse JSON from response at %s", url)
                 return None
 
         except RequestException as e:
-            # Provide as much context as possible
             logger.error("HTTP request failed for %s: %s", endpoint, str(e))
             resp = getattr(e, "response", None)
             if resp is not None:
@@ -133,6 +138,7 @@ class BlkSMSService:
         except Exception as e:
             logger.exception("Unexpected error in _make_request for %s: %s", endpoint, str(e))
             return None
+
 
     # ---------------- Public API ----------------
 
