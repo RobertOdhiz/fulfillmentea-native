@@ -219,7 +219,7 @@ def add_tracking_history(
     parcel.current_status = payload.status
     
     # Update specific timestamps based on status
-    if payload.status == ParcelStatus.DISPATCHED:
+    if payload.status == ParcelStatus.IN_TRANSIT:
         parcel.dispatched = True
         parcel.dispatched_at = datetime.utcnow()
     elif payload.status == ParcelStatus.DELIVERED:
