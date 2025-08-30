@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..deps import get_db, get_current_staff, require_roles
 from ..models import Staff, StaffRole
-from ..schemas import StaffOut, StaffCreate
+from ..schemas import StaffOut, StaffCreate, StaffUpdate
 from ..utils.security import get_password_hash
 
 router = APIRouter()
@@ -21,7 +21,7 @@ def list_staff(db: Session = Depends(get_db), _: Staff = Depends(require_roles(S
 
 
 @router.put("/{staff_id}", response_model=StaffOut)
-def update_staff(staff_id: str, payload: StaffCreate, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
+def update_staff(staff_id: str, payload: StaffUpdate, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
     staff = db.get(Staff, staff_id)
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
@@ -38,10 +38,11 @@ def update_staff(staff_id: str, payload: StaffCreate, db: Session = Depends(get_
         if existing:
             raise HTTPException(status_code=400, detail="Email already exists")
     
-    staff.full_name = payload.full_name
-    staff.phone = payload.phone
-    staff.email = payload.email
-    staff.role = payload.role
+    staff.full_name = payload.full_name if payload.full_name else staff.full_name
+    staff.phone = payload.phone if payload.phone else staff.phone
+    staff.email = payload.email if payload.email else staff.email
+    staff.role = payload.role if payload.role else staff.role
+    staff.is_active = payload.is_active if payload.is_active else staff.is_active
     
     # Only update password if provided
     if payload.password:

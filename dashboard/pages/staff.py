@@ -53,7 +53,7 @@ def render_staff(token: str):
                         "password": password
                     }, token)
                     st.success(f"Staff member {full_name} added successfully!")
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to add staff member: {str(e)}")
         
@@ -96,7 +96,7 @@ def render_staff(token: str):
                                 
                                 updated_staff = api_client.put(f"/staff/{selected_staff['id']}", update_data, token)
                                 st.success(f"Staff member {edit_name} updated successfully!")
-                                st.experimental_rerun()
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"Failed to update staff member: {str(e)}")
                     
@@ -105,7 +105,7 @@ def render_staff(token: str):
                             try:
                                 result = api_client.delete(f"/staff/{selected_staff['id']}", token)
                                 st.success(result['message'])
-                                st.experimental_rerun()
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"Failed to delete staff member: {str(e)}")
         

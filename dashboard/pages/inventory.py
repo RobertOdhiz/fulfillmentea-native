@@ -48,7 +48,7 @@ def render_inventory(token: str):
                         "unit": unit
                     }, token)
                     st.success(f"Item {name} added successfully!")
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to add item: {str(e)}")
         
@@ -77,7 +77,7 @@ def render_inventory(token: str):
                             updated_item = api_client.post(f"/inventory/{selected_item['id']}/adjust", 
                                                          {"delta": adjustment}, token)
                             st.success(f"Quantity adjusted successfully!")
-                            st.experimental_rerun()
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Failed to adjust quantity: {str(e)}")
             
@@ -91,7 +91,7 @@ def render_inventory(token: str):
                 try:
                     api_client.delete(f"/inventory/{deactivate_item['id']}", token)
                     st.success(f"Item {deactivate_item['name']} deactivated!")
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to deactivate item: {str(e)}")
                             
