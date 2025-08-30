@@ -2,7 +2,7 @@ from datetime import datetime
 import os
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
@@ -326,3 +326,27 @@ def track_parcel_public(
     return db.query(TrackingHistory).filter(
         TrackingHistory.parcel_id == parcel.id
     ).order_by(TrackingHistory.created_at.asc()).all()
+
+@router.get("/track", response_model=ParcelOut)
+def track_parcel(
+    sender_phone: Optional[str] = Query(None),
+    receiver_phone: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Public endpoint for tracking parcels by sender or receiver phone without authentication"""
+    if not sender_phone and not receiver_phone:
+        raise HTTPException(status_code=400, detail="At least one phone number (sender or receiver) is required")
+
+    query = db.query(Parcel)
+
+    if sender_phone:
+        query = query.filter(Parcel.sender_phone == sender_phone)
+    if receiver_phone:
+        query = query.filter(Parcel.receiver_phone == receiver_phone)
+
+    parcel = query.first()
+
+    if not parcel:
+        raise HTTPException(status_code=404, detail="Parcel not found")
+
+    return parcel
