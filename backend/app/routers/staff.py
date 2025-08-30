@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..deps import get_db, get_current_staff, require_roles
 from ..models import Staff, StaffRole
-from ..schemas import StaffOut, StaffCreate, StaffUpdate
+from ..schemas import StaffOut, StaffUpdate
 from ..utils.security import get_password_hash
 
 router = APIRouter()

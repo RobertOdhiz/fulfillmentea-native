@@ -26,6 +26,13 @@ class StaffCreate(BaseModel):
     role: StaffRole
     password: str
 
+class StaffUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[StaffRole] = None
+    is_active: Optional[bool] = None
+
 
 class StaffOut(StaffBase):
     id: str
