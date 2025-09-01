@@ -80,6 +80,7 @@ def render_staff(token: str):
                             "RECEIVING", "DISPATCHER", "DELIVERY"
                         ].index(selected_staff['role']))
                         edit_password = st.text_input("New Password (leave blank to keep current)", type="password")
+                        edit_is_active = st.checkbox("Active", value=selected_staff['is_active'])
                     
                     col1, col2 = st.columns(2)
                     with col1:
@@ -89,7 +90,8 @@ def render_staff(token: str):
                                     "full_name": edit_name,
                                     "phone": edit_phone,
                                     "email": edit_email if edit_email else None,
-                                    "role": edit_role
+                                    "role": edit_role,
+                                    "is_active": edit_is_active
                                 }
                                 if edit_password:
                                     update_data["password"] = edit_password

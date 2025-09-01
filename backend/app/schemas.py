@@ -32,6 +32,8 @@ class StaffUpdate(BaseModel):
     email: Optional[str] = None
     role: Optional[StaffRole] = None
     is_active: Optional[bool] = None
+    password: Optional[str] = None
+    
 
 
 class StaffOut(StaffBase):
