@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
+import hashlib
 
 from ..core.config import settings
 from ..deps import get_db, get_current_staff
@@ -30,6 +31,23 @@ def validate_status_transition(current_status: ParcelStatus, new_status: ParcelS
     return new_status in status_flow.get(current_status, [])
 
 
+import hashlib
+from datetime import datetime
+
+def generate_tracking_number() -> str:
+    now_str = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+    # hash current datetime
+    full_hash = hashlib.sha1(now_str.encode()).hexdigest().upper()
+    # define safe characters (exclude O, 0, I, L)
+    safe_chars = "ABCDEFGHJKMNPQRSTUVWXYZ123456789"
+    # filter hash to only safe characters
+    filtered = "".join(ch for ch in full_hash if ch in safe_chars)
+    # take first 5 safe chars
+    random_part = filtered[:5]
+    return f"TRK-{random_part}"
+
+
+
 @router.post("/", response_model=ParcelOut)
 @router.post("", response_model=ParcelOut, include_in_schema=False)
 def create_parcel(
@@ -37,6 +55,8 @@ def create_parcel(
     db: Session = Depends(get_db), 
     staff: Staff = Depends(get_current_staff)
 ):
+    tracking_number = generate_tracking_number()
+
     parcel = Parcel(
         sender_name=payload.sender_name,
         sender_phone=payload.sender_phone,
@@ -54,6 +74,7 @@ def create_parcel(
         special_instructions=payload.special_instructions,
         received_by_id=staff.id,
         current_status=ParcelStatus.RECEIVED,
+        tracking_number=tracking_number,
     )
     db.add(parcel)
     db.commit()
@@ -64,7 +85,7 @@ def create_parcel(
         parcel_id=parcel.id,
         status=ParcelStatus.RECEIVED,
         location=settings.default_location or "Main Office",
-        notes="Parcel received at facility",
+        notes=f"Parcel received at facility. Tracking: {tracking_number}",  # 🔹 Add tracking ref
         updated_by_staff_id=staff.id
     )
     db.add(initial_tracking)
@@ -72,8 +93,8 @@ def create_parcel(
     
     # Notify sender and receiver
     try:
-        send_sms(parcel.sender_phone, f"Parcel {parcel.id} received at origin.")
-        send_sms(parcel.receiver_phone, f"Parcel for you ({parcel.id}) has been received and will be dispatched soon.")
+        send_sms(parcel.sender_phone, f"Parcel {parcel.id} received at origin. Tracking Number: {tracking_number}")
+        send_sms(parcel.receiver_phone, f"Parcel for you ({parcel.id}) has been received. Tracking Number: {tracking_number}")
     except Exception:
         pass
     
@@ -313,40 +334,3 @@ def get_tracking_history(
     return tracking_history
 
 
-@router.get("/track/{tracking_number}", response_model=List[TrackingHistoryOut])
-def track_parcel_public(
-    tracking_number: str,
-    db: Session = Depends(get_db)
-):
-    """Public endpoint for tracking parcels without authentication"""
-    parcel = db.query(Parcel).filter(Parcel.tracking_number == tracking_number).first()
-    if not parcel:
-        raise HTTPException(status_code=404, detail="Parcel not found")
-    
-    return db.query(TrackingHistory).filter(
-        TrackingHistory.parcel_id == parcel.id
-    ).order_by(TrackingHistory.created_at.asc()).all()
-
-@router.get("/track", response_model=ParcelOut)
-def track_parcel(
-    sender_phone: Optional[str] = Query(None),
-    receiver_phone: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    """Public endpoint for tracking parcels by sender or receiver phone without authentication"""
-    if not sender_phone and not receiver_phone:
-        raise HTTPException(status_code=400, detail="At least one phone number (sender or receiver) is required")
-
-    query = db.query(Parcel)
-
-    if sender_phone:
-        query = query.filter(Parcel.sender_phone == sender_phone)
-    if receiver_phone:
-        query = query.filter(Parcel.receiver_phone == receiver_phone)
-
-    parcel = query.first()
-
-    if not parcel:
-        raise HTTPException(status_code=404, detail="Parcel not found")
-
-    return parcel

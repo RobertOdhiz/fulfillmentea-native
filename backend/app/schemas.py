@@ -18,6 +18,29 @@ class StaffBase(ORMModel):
     role: StaffRole
     is_active: bool = True
 
+class StaffOutLite(ORMModel):
+    id: str
+    full_name: str
+    phone: str
+
+
+class RiderOutLite(ORMModel):
+    id: str
+    full_name: str
+    phone: str
+    vehicle_details: Optional[str]
+
+
+class ParcelOutLite(ORMModel):
+    id: str
+    sender_name: str
+    receiver_name: str
+    sender_phone: str
+    receiver_phone: str
+    current_status: ParcelStatus
+    tracking_number: Optional[str]
+
+
 
 class StaffCreate(BaseModel):
     full_name: str
@@ -114,6 +137,7 @@ class ParcelOut(ORMModel):
     current_status: ParcelStatus
     delivery_outcome: DeliveryOutcome
     failure_reason: Optional[str]
+    tracking_number: Optional[str]
 
 
 class AssignmentCreate(BaseModel):
@@ -122,9 +146,9 @@ class AssignmentCreate(BaseModel):
 
 class AssignmentOut(ORMModel):
     id: str
-    parcel_id: str
-    rider_id: str
-    assigned_by_staff_id: str
+    parcel: ParcelOutLite
+    rider: RiderOutLite
+    assigned_by_staff: StaffOutLite
     assigned_at: datetime
 
 
@@ -134,9 +158,10 @@ class OTPVerifyRequest(BaseModel):
 
 class PhotoOut(ORMModel):
     id: str
-    parcel_id: str
+    parcel: ParcelOutLite
     type: PhotoType
     file_path: str
+
 
 
 # Delivery attempts
@@ -148,11 +173,12 @@ class DeliveryAttemptCreate(BaseModel):
 
 class DeliveryAttemptOut(ORMModel):
     id: str
-    parcel_id: str
-    rider_id: Optional[str]
+    parcel: ParcelOutLite
+    rider: Optional[RiderOutLite]
     status: DeliveryAttemptStatus
     note: Optional[str]
     attempted_at: datetime
+
 
 
 # Payments / Receipts
@@ -165,7 +191,7 @@ class PaymentCreate(BaseModel):
 
 class PaymentOut(ORMModel):
     id: str
-    parcel_id: str
+    parcel: ParcelOutLite
     amount: float
     currency: str
     method: PaymentMethod
@@ -173,14 +199,16 @@ class PaymentOut(ORMModel):
     reference: Optional[str]
 
 
+
 class ReceiptOut(ORMModel):
     id: str
-    parcel_id: str
+    parcel: ParcelOutLite
     receipt_number: str
     total_amount: float
     currency: str
     generated_at: datetime
     printed: bool
+
 
 
 # Disputes / Refunds
@@ -191,7 +219,7 @@ class DisputeCreate(BaseModel):
 
 class DisputeOut(ORMModel):
     id: str
-    parcel_id: str
+    parcel: ParcelOutLite
     raised_by: RaisedBy
     reason: str
     status: DisputeStatus
@@ -205,10 +233,11 @@ class RefundCreate(BaseModel):
 
 class RefundOut(ORMModel):
     id: str
-    dispute_id: str
+    dispute: DisputeOut
     amount: float
     currency: str
     processed_at: datetime
+
 
 
 # Inventory
@@ -248,13 +277,14 @@ class TrackingHistoryCreate(BaseModel):
 
 class TrackingHistoryOut(ORMModel):
     id: str
-    parcel_id: str
+    parcel: ParcelOutLite
     status: ParcelStatus
     location: str
     notes: Optional[str]
-    updated_by_staff_id: Optional[str]
-    rider_id: Optional[str]
+    updated_by_staff: Optional[StaffOutLite]
+    rider: Optional[RiderOutLite]
     created_at: datetime
+
 
 class TrackingHistoryUpdate(BaseModel):
     status: Optional[ParcelStatus] = None

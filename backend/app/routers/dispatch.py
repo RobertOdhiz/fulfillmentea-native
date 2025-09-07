@@ -1,12 +1,12 @@
 from datetime import datetime
 import uuid
-
+from sqlalchemy.orm import joinedload, selectinload
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..deps import get_db, require_roles, get_current_staff
-from ..models import Parcel, Assignment, Rider, StaffRole, ParcelStatus, OTP
-from ..schemas import AssignmentCreate, AssignmentOut
+from ..models import Parcel, Assignment, Rider, StaffRole, ParcelStatus, OTP, Staff
+from ..schemas import AssignmentCreate, AssignmentOut, ParcelOutLite, RiderOutLite, StaffOutLite
 from ..utils.otp import generate_otp_code, hash_otp, expiry_time
 from ..services.notifications import send_sms
 
@@ -22,7 +22,7 @@ def _to_e164(phone: str) -> str:
 
 def _ensure_reference(reference: str = None) -> str:
     if not reference:
-        return uuid.uuid4().hex  # 32 chars
+        return uuid.uuid4().hex
     reference = str(reference)
     if len(reference) >= 20:
         return reference
@@ -82,41 +82,22 @@ def assign_rider(parcel_id: str, payload: AssignmentCreate, db: Session = Depend
         print(f"Failed to send SMS notifications: {e}")
         # Continue even if SMS fails
     
+    # Return the assignment with proper nested structure
     return assignment
 
 
 @router.get("/", response_model=list[AssignmentOut])
 @router.get("", response_model=list[AssignmentOut], include_in_schema=False)
 def list_assignments(db: Session = Depends(get_db)):
-    """List all parcel assignments"""
-    assignments = db.query(Assignment).all()
+    """List all parcel assignments with nested relationships"""
+    # Use joinedload to fetch all related data in one query
+    assignments = db.query(Assignment).options(
+        joinedload(Assignment.parcel),
+        joinedload(Assignment.rider),
+        joinedload(Assignment.assigned_by_staff)
+    ).all()
     
-    # Enhance with rider and parcel names
-    result = []
-    for assignment in assignments:
-        assignment_data = {
-            "id": assignment.id,
-            "parcel_id": assignment.parcel_id,
-            "rider_id": assignment.rider_id,
-            "assigned_by_staff_id": assignment.assigned_by_staff_id,
-            "assigned_at": assignment.assigned_at
-        }
-        
-        # Add rider name
-        rider = db.get(Rider, assignment.rider_id)
-        if rider:
-            assignment_data["rider_name"] = rider.full_name
-            assignment_data["rider_phone"] = rider.phone
-        
-        # Add parcel info
-        parcel = db.get(Parcel, assignment.parcel_id)
-        if parcel:
-            assignment_data["parcel_sender"] = parcel.sender_name
-            assignment_data["parcel_receiver"] = parcel.receiver_name
-        
-        result.append(assignment_data)
-    
-    return result
+    return assignments
 
 
 @router.post("/{parcel_id}/dispatch")
