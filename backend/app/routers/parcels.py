@@ -93,8 +93,8 @@ def create_parcel(
     
     # Notify sender and receiver
     try:
-        send_sms(parcel.sender_phone, f"Parcel {parcel.id} received at origin. Tracking Number: {tracking_number}")
-        send_sms(parcel.receiver_phone, f"Parcel for you ({parcel.id}) has been received. Tracking Number: {tracking_number}")
+        send_sms(parcel.sender_phone, f"Habari {parcel.sender_name}, Mzigo namba {parcel.tracking_number} - {parcel.parcel_type} kutoka {parcel.sender_location}, unatumwa Leo kutoka {parcel.sender_location} kuja {parcel.receiver_location}. Utapokea Leo. Wasiliana nasi Huduma kwa wateja - +255 764 730 000")
+        send_sms(parcel.receiver_phone, f"Habari {parcel.receiver_name}, Mzigo namba {parcel.tracking_number} - {parcel.parcel_type} kutoka {parcel.sender_location}, unatumwa Leo kutoka {parcel.sender_location} kuja {parcel.receiver_location}. Utapokea Leo. Wasiliana nasi Huduma kwa wateja - +255 764 730 000")
     except Exception:
         pass
     
@@ -255,14 +255,21 @@ def add_tracking_history(
     # Send notification for important status changes
     if payload.status in [ParcelStatus.DELIVERED, ParcelStatus.OUT_FOR_DELIVERY]:
         try:
-            message = f"Your parcel {parcel_id} status updated to: {payload.status}"
+            if payload.status == ParcelStatus.DELIVERED:
+                status_text = "umefikishwa"
+            elif payload.status == ParcelStatus.OUT_FOR_DELIVERY:
+                status_text = "uko njiani"
+
+            message = f"Mzigo wako: {parcel.tracking_number} {status_text}"
             if payload.status == ParcelStatus.OUT_FOR_DELIVERY:
-                message += ". Delivery is on the way!"
+                message += ". Tafadhali kaa tayari kupokea!"
+
             send_sms(parcel.receiver_phone, message)
         except Exception:
             pass
-    
+
     return tracking_history
+
 
 
 @router.put("/{parcel_id}/track/{tracking_history_id}", response_model=TrackingHistoryOut)

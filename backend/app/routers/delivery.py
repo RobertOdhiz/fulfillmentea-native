@@ -39,11 +39,12 @@ def verify_otp(parcel_id: str, payload: OTPVerifyRequest, db: Session = Depends(
         db.add(new_otp)
         db.commit()
         # Notify receiver with the rotated OTP
-        send_sms(parcel.receiver_phone, f"Your new delivery OTP is {new_code}")
+        send_sms(parcel.receiver_phone, f"Tumia OTP mpya {new_code} kupokea mzigo wako")
         raise HTTPException(status_code=400, detail="Invalid OTP. A new code has been sent.")
 
     otp.consumed_at = datetime.utcnow()
     parcel.current_status = ParcelStatus.OUT_FOR_DELIVERY
+    parcel.dispatched = True
     db.add(otp)
     db.add(parcel)
     db.commit()
@@ -91,7 +92,7 @@ def get_delivery_info(parcel_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{parcel_id}/attempts", response_model=DeliveryAttemptOut)
-def record_attempt(parcel_id: str, payload: DeliveryAttemptCreate, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.DELIVERY, StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
+def record_attempt(parcel_id: str, payload: DeliveryAttemptCreate, db: Session = Depends(get_db)):
     parcel = db.get(Parcel, parcel_id)
     if not parcel:
         raise HTTPException(status_code=404, detail="Parcel not found")
@@ -103,7 +104,7 @@ def record_attempt(parcel_id: str, payload: DeliveryAttemptCreate, db: Session =
 
 
 @router.post("/{parcel_id}/mark-failed")
-def mark_failed(parcel_id: str, reason: str, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.DELIVERY, StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
+def mark_failed(parcel_id: str, reason: str, db: Session = Depends(get_db)):
     parcel = db.get(Parcel, parcel_id)
     if not parcel:
         raise HTTPException(status_code=404, detail="Parcel not found")
@@ -117,7 +118,7 @@ def mark_failed(parcel_id: str, reason: str, db: Session = Depends(get_db), _=De
 
 
 @router.post("/{parcel_id}/confirm-delivery")
-def confirm_delivery(parcel_id: str, db: Session = Depends(get_db), _=Depends(require_roles(StaffRole.DELIVERY, StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
+def confirm_delivery(parcel_id: str, db: Session = Depends(get_db)):
     parcel = db.get(Parcel, parcel_id)
     if not parcel:
         raise HTTPException(status_code=404, detail="Parcel not found")
@@ -130,8 +131,8 @@ def confirm_delivery(parcel_id: str, db: Session = Depends(get_db), _=Depends(re
     db.commit()
     # Notify both sender and receiver upon successful delivery
     try:
-        send_sms(parcel.sender_phone, f"Parcel {parcel.id} delivered successfully.")
-        send_sms(parcel.receiver_phone, f"Your parcel {parcel.id} has been delivered.")
+        send_sms(parcel.sender_phone, f"Mzigo {parcel.tracking_number} umefikishwa kwa mafanikio.\nWasiliana nasi Huduma kwa wateja - +255 764 730 000")
+        send_sms(parcel.receiver_phone, f"Mzigo wako {parcel.tracking_number} umefikishwa.\nWasiliana nasi Huduma kwa wateja - +255 764 730 000")
     except Exception:
         pass
     return {"status": "delivered"}

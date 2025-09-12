@@ -65,21 +65,21 @@ def assign_rider(parcel_id: str, payload: AssignmentCreate, db: Session = Depend
     db.refresh(assignment)
     
     # Send SMS notifications
-    try:
-        # Notify sender about rider assignment
-        sender_message = f"Parcel {parcel_id} has been assigned to rider {rider.full_name} ({rider.phone}). Your parcel is now out for delivery!"
-        send_sms(_to_e164(parcel.sender_phone), sender_message)
+    # try:
+    #     # Notify sender about rider assignment
+    #     sender_message = f"Parcel {parcel_id} has been assigned to rider {rider.full_name} ({rider.phone}). Your parcel is now out for delivery!"
+    #     send_sms(_to_e164(parcel.sender_phone), sender_message)
         
-        # Notify receiver with OTP and rider details
-        receiver_message = f"Your parcel {parcel_id} is out for delivery! Rider: {rider.full_name} ({rider.phone}). Delivery OTP: {code}. Please have this code ready when the rider arrives."
-        send_sms(_to_e164(parcel.receiver_phone), receiver_message)
+    #     # Notify receiver with OTP and rider details
+    #     receiver_message = f"Your parcel {parcel_id} is out for delivery! Rider: {rider.full_name} ({rider.phone}). Delivery OTP: {code}. Please have this code ready when the rider arrives."
+    #     send_sms(_to_e164(parcel.receiver_phone), receiver_message)
         
-        # Notify rider about new assignment
-        rider_message = f"You have been assigned parcel {parcel_id}. Pickup from: {parcel.sender_name} ({parcel.sender_phone}) at {parcel.sender_location}. Deliver to: {parcel.receiver_name} ({parcel.receiver_phone}) at {parcel.receiver_location}."
-        send_sms(_to_e164(rider.phone), rider_message)
+    #     # Notify rider about new assignment
+    #     rider_message = f"You have been assigned parcel {parcel_id}. Pickup from: {parcel.sender_name} ({parcel.sender_phone}) at {parcel.sender_location}. Deliver to: {parcel.receiver_name} ({parcel.receiver_phone}) at {parcel.receiver_location}."
+    #     send_sms(_to_e164(rider.phone), rider_message)
         
-    except Exception as e:
-        print(f"Failed to send SMS notifications: {e}")
+    # except Exception as e:
+    #     print(f"Failed to send SMS notifications: {e}")
         # Continue even if SMS fails
     
     # Return the assignment with proper nested structure
@@ -101,7 +101,7 @@ def list_assignments(db: Session = Depends(get_db)):
 
 
 @router.post("/{parcel_id}/dispatch")
-def dispatch_parcel(parcel_id: str, db: Session = Depends(get_db), staff=Depends(require_roles(StaffRole.DISPATCHER, StaffRole.MANAGER, StaffRole.ADMIN, StaffRole.SUPER_ADMIN))):
+def dispatch_parcel(parcel_id: str, db: Session = Depends(get_db)):
     parcel = db.get(Parcel, parcel_id)
     if not parcel:
         raise HTTPException(status_code=404, detail="Parcel not found")
@@ -120,6 +120,6 @@ def dispatch_parcel(parcel_id: str, db: Session = Depends(get_db), staff=Depends
     db.commit()
 
     # Notify both sender and receiver on dispatch and send OTP to receiver
-    send_sms(_to_e164(parcel.sender_phone), f"Parcel {parcel.id} dispatched.")
-    send_sms(_to_e164(parcel.receiver_phone), f"Your delivery OTP is {code}")
+    send_sms(_to_e164(parcel.sender_phone), f"Mzigo {parcel.tracking_number} unasafirishwa .")
+    send_sms(_to_e164(parcel.receiver_phone), f"Nambari yako ya OTP kwa kupokea mzigo ni {code}")
     return {"status": "ok"}
